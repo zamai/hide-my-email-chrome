@@ -1,4 +1,4 @@
-import { CHINA_SETUP_URL, DEFAULT_SETUP_URL, ExtensionError } from './domain';
+import { DEFAULT_SETUP_URL, ExtensionError } from './domain';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -23,11 +23,7 @@ export function assertAppleServiceUrl(value: unknown): string {
 
   const url = new URL(value);
   const hostname = url.hostname.toLowerCase();
-  const isAppleHost =
-    hostname === 'icloud.com' ||
-    hostname.endsWith('.icloud.com') ||
-    hostname === 'icloud.com.cn' ||
-    hostname.endsWith('.icloud.com.cn');
+  const isAppleHost = hostname === 'icloud.com' || hostname.endsWith('.icloud.com');
 
   if (url.protocol !== 'https:' || !isAppleHost || url.username || url.password) {
     throw new ExtensionError('network_failure', 'iCloud returned an untrusted service URL.');
@@ -41,7 +37,7 @@ export class AppleClient {
     private serviceUrl?: string,
     private readonly fetcher: typeof fetch = fetch
   ) {
-    if (![DEFAULT_SETUP_URL, CHINA_SETUP_URL].includes(setupUrl)) {
+    if (setupUrl !== DEFAULT_SETUP_URL) {
       throw new ExtensionError('network_failure', 'Unsupported iCloud setup endpoint.');
     }
   }

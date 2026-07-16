@@ -36,11 +36,6 @@ header p {
   min-height: 60px;
   color: color-mix(in srgb, CanvasText 72%, transparent);
 }
-.region {
-  display: block;
-  margin: 12px 0;
-  font-size: 12px;
-}
 button {
   width: 100%;
   border: 0;

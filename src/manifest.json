@@ -29,7 +29,7 @@
     "scripting",
     "storage"
   ],
-  "host_permissions": ["https://*.icloud.com/*", "https://*.icloud.com.cn/*"],
+  "host_permissions": ["https://*.icloud.com/*"],
   "icons": {
     "16": "icon-16.png",
     "32": "icon-32.png",

@@ -37,9 +37,7 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
       case 'get-state':
         return adapter.getConnection();
       case 'connect':
-        return workflow.connect(
-          message.china ? 'https://setup.icloud.com.cn/setup/ws/1' : DEFAULT_SETUP_URL
-        );
+        return workflow.connect(DEFAULT_SETUP_URL);
       case 'disconnect':
         return workflow.disconnect().then(() => adapter.getConnection());
     }
@@ -58,14 +56,10 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
   return true;
 });
 
-type PopupMessage =
-  | { type: 'get-state' }
-  | { type: 'connect'; china: boolean }
-  | { type: 'disconnect' };
+type PopupMessage = { type: 'get-state' } | { type: 'connect' } | { type: 'disconnect' };
 
 function isPopupMessage(value: unknown): value is PopupMessage {
   if (typeof value !== 'object' || value === null || !('type' in value)) return false;
   const type = value.type;
-  if (type === 'get-state' || type === 'disconnect') return true;
-  return type === 'connect' && 'china' in value && typeof value.china === 'boolean';
+  return type === 'get-state' || type === 'connect' || type === 'disconnect';
 }

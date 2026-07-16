@@ -1,5 +1,4 @@
 export const DEFAULT_SETUP_URL = 'https://setup.icloud.com/setup/ws/1';
-export const CHINA_SETUP_URL = 'https://setup.icloud.com.cn/setup/ws/1';
 
 export type ConnectionStatus = 'disconnected' | 'ready' | 'reconnect_required';
 

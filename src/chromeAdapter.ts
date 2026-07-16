@@ -98,9 +98,7 @@ export const chromeAppleFetch: typeof fetch = async (input, init) => {
     return await fetch(input, init);
   } catch (extensionFetchError) {
     const url = input instanceof Request ? input.url : input.toString();
-    const tabs = await chrome.tabs.query({
-      url: ['https://www.icloud.com/*', 'https://www.icloud.com.cn/*'],
-    });
+    const tabs = await chrome.tabs.query({ url: 'https://www.icloud.com/*' });
     const tab = tabs.find((candidate) => candidate.id !== undefined);
     if (tab?.id === undefined) throw extensionFetchError;
 

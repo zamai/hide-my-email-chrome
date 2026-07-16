@@ -12,7 +12,6 @@ const status = requiredElement<HTMLElement>('#status');
 const detail = requiredElement<HTMLElement>('#detail');
 const connectButton = requiredElement<HTMLButtonElement>('#connect');
 const disconnectButton = requiredElement<HTMLButtonElement>('#disconnect');
-const chinaCheckbox = requiredElement<HTMLInputElement>('#china');
 
 function render(state: ConnectionState): void {
   const ready = state.status === 'ready';
@@ -43,7 +42,7 @@ async function refresh(): Promise<void> {
 connectButton.addEventListener('click', () => {
   connectButton.disabled = true;
   detail.textContent = 'Checking the iCloud session…';
-  void send({ type: 'connect', china: chinaCheckbox.checked })
+  void send({ type: 'connect' })
     .then((response) => {
       if (response.ok) render(response.state);
       else detail.textContent = `${response.error} Sign in at iCloud.com and try again.`;
