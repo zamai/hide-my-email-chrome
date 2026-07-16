@@ -17,8 +17,8 @@ The inherited build was not retained unchanged because it exposed a content scri
 - `activeTab` grants temporary access only to the page where the user invokes the command, allowing the reserved address to be inserted into its focused field.
 - `clipboardWrite` allows the reserved address to be copied after the asynchronous Apple reservation finishes and the original user activation has elapsed.
 - There is no content script, remote code, telemetry, analytics, or non-Apple network request.
-- Clipboard access is isolated in an extension-owned offscreen document and occurs only after Apple's allowlisted reservation endpoint returns `success: true`. Apple's current response does not always echo the reserved address; if it does echo an address, the extension requires it to match the requested candidate.
-- If Chrome rejects the service-worker request origin, the same allowlisted request is executed in the main world of an already-open iCloud.com tab. Only the JSON response returns to the service worker; cookies remain inaccessible to extension code.
+- Clipboard access is isolated in an extension-owned offscreen document and occurs only after Apple's allowlisted reservation endpoint returns a consistent `success: true` acknowledgement or Apple's alias-list endpoint confirms the exact requested candidate.
+- Non-idempotent alias reservations are sent exactly once. If Chrome cannot read the response, the extension verifies that exact candidate through Apple's idempotent alias-list endpoint instead of retrying the reservation. Idempotent validation, generation, and listing requests may safely retry in the main world of an already-open iCloud.com tab. Only JSON responses return to the service worker; cookies remain inaccessible to extension code.
 
 The declarative request rules set Apple Origin and Referer headers for extension-initiated iCloud requests. This compatibility mechanism is intentionally restricted to Apple hostnames and is required because the private web API may reject a `chrome-extension://` origin.
 

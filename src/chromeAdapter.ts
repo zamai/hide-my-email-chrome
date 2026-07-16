@@ -94,45 +94,50 @@ export function isGenerateMenuClick(info: chrome.contextMenus.OnClickData): bool
 }
 
 export const chromeAppleFetch: typeof fetch = async (input, init) => {
+  const url = input instanceof Request ? input.url : input.toString();
+  const isReservation = new URL(url).pathname.endsWith('/v1/hme/reserve');
+  if (isReservation) return await fetch(input, init);
+
   try {
     return await fetch(input, init);
-  } catch (extensionFetchError) {
-    const url = input instanceof Request ? input.url : input.toString();
-    const tabs = await chrome.tabs.query({ url: 'https://www.icloud.com/*' });
-    const tab = tabs.find((candidate) => candidate.id !== undefined);
-    if (tab?.id === undefined) throw extensionFetchError;
-
-    const headers: Record<string, string> = {};
-    new Headers(init?.headers).forEach((value, key) => {
-      headers[key] = value;
-    });
-    const request = {
-      method: init?.method ?? 'GET',
-      credentials: 'include' as const,
-      headers,
-      ...(typeof init?.body === 'string' ? { body: init.body } : {}),
-    };
-
-    const [injection] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      world: 'MAIN',
-      func: async (requestUrl: string, requestInit: RequestInit) => {
-        const response = await fetch(requestUrl, requestInit);
-        return {
-          body: await response.text(),
-          status: response.status,
-          statusText: response.statusText,
-        };
-      },
-      args: [url, request],
-    });
-    if (!injection?.result) throw extensionFetchError;
-    return new Response(injection.result.body, {
-      status: injection.result.status,
-      statusText: injection.result.statusText,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  } catch {
+    // Validation, generation, and listing are idempotent, so an iCloud-page retry is safe.
   }
+
+  const tabs = await chrome.tabs.query({ url: 'https://www.icloud.com/*' });
+  const tab = tabs.find((candidate) => candidate.id !== undefined);
+  if (tab?.id === undefined) throw new Error('No authenticated iCloud tab is available.');
+
+  const headers: Record<string, string> = {};
+  new Headers(init?.headers).forEach((value, key) => {
+    headers[key] = value;
+  });
+  const request = {
+    method: init?.method ?? 'GET',
+    credentials: 'include' as const,
+    headers,
+    ...(typeof init?.body === 'string' ? { body: init.body } : {}),
+  };
+
+  const [injection] = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    world: 'MAIN',
+    func: async (requestUrl: string, requestInit: RequestInit) => {
+      const response = await fetch(requestUrl, requestInit);
+      return {
+        body: await response.text(),
+        status: response.status,
+        statusText: response.statusText,
+      };
+    },
+    args: [url, request],
+  });
+  if (!injection?.result) throw new Error('The iCloud request did not return a response.');
+  return new Response(injection.result.body, {
+    status: injection.result.status,
+    statusText: injection.result.statusText,
+    headers: { 'Content-Type': 'application/json' },
+  });
 };
 
 function isMessageResponse(value: unknown): value is { ok: boolean } {
