@@ -60,13 +60,30 @@ describe('AppleClient', () => {
     await expect(client.reserve('one@icloud.com', 'example.com')).resolves.toBe('one@icloud.com');
   });
 
-  it('rejects a mismatched reservation confirmation', async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
-      jsonResponse({
-        success: true,
-        result: { hme: { hme: 'other@icloud.com' } },
-      })
-    );
+  it.each([{ success: true }, { success: true, result: {} }, { success: true, result: null }])(
+    'accepts a successful reservation acknowledgement without an echoed address',
+    async (response) => {
+      const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(response));
+      const client = new AppleClient(undefined, 'https://p123-maildomainws.icloud.com', fetcher);
+      await expect(client.reserve('one@icloud.com', 'example.com')).resolves.toBe('one@icloud.com');
+    }
+  );
+
+  it('rejects an unsuccessful reservation acknowledgement', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(jsonResponse({ success: false, result: {} }));
+    const client = new AppleClient(undefined, 'https://p123-maildomainws.icloud.com', fetcher);
+    await expect(client.reserve('candidate@icloud.com', 'example.com')).rejects.toMatchObject({
+      code: 'reservation_failure',
+    });
+  });
+
+  it.each([
+    { success: true, result: { hme: 'other@icloud.com' } },
+    { success: true, result: { hme: { hme: 'other@icloud.com' } } },
+  ])('rejects a mismatched reservation confirmation', async (response) => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(response));
     const client = new AppleClient(undefined, 'https://p123-maildomainws.icloud.com', fetcher);
     await expect(client.reserve('candidate@icloud.com', 'example.com')).rejects.toMatchObject({
       code: 'reservation_failure',

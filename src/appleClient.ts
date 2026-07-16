@@ -79,11 +79,12 @@ export class AppleClient {
     const result = readRecord(data, 'result');
     const hmeResult = result?.hme;
     const reservation = isRecord(hmeResult) ? hmeResult : undefined;
-    const confirmed = typeof hmeResult === 'string' ? hmeResult : reservation?.hme;
-    if (data.success !== true || confirmed !== candidate) {
+    const echoedAddress = typeof hmeResult === 'string' ? hmeResult : reservation?.hme;
+    const hasConflictingEcho = typeof echoedAddress === 'string' && echoedAddress !== candidate;
+    if (data.success !== true || hasConflictingEcho) {
       throw new ExtensionError('reservation_failure', 'Reservation was not confirmed.');
     }
-    return confirmed;
+    return candidate;
   }
 
   private requireServiceUrl(): string {

@@ -64,20 +64,20 @@ export class HideMyEmailWorkflow {
       await this.persistConnected(refreshed);
 
       const candidate = await client.generate();
-      const confirmed = await client.reserve(candidate, label);
+      const reservedAddress = await client.reserve(candidate, label);
       let delivery: 'input' | 'clipboard';
       try {
-        delivery = await this.port.deliver(confirmed, tabId, options.preferInput === true);
+        delivery = await this.port.deliver(reservedAddress, tabId, options.preferInput === true);
       } catch (cause) {
         throw new ExtensionError('clipboard_failure', 'Address delivery failed.', { cause });
       }
       await this.port.notify(
         'Hide My Email created',
         delivery === 'input'
-          ? `${confirmed} was inserted into the focused field.`
-          : `${confirmed} was copied to your clipboard.`
+          ? `${reservedAddress} was inserted into the focused field.`
+          : `${reservedAddress} was copied to your clipboard.`
       );
-      return confirmed;
+      return reservedAddress;
     } catch (error) {
       if (error instanceof ExtensionError && error.code === 'session_expired') {
         await this.port.saveConnection({ status: 'reconnect_required' });
