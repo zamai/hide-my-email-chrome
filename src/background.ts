@@ -26,7 +26,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (!pageUrl) return;
   void workflow
     .generateForTab(tab.id, pageUrl, { preferInput: info.editable })
-    .catch(() => undefined);
+    .catch((error: unknown) => {
+      if (__DEV__) reportDevelopmentError(error);
+    });
 });
 
 chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {

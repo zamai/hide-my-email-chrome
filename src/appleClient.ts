@@ -77,8 +77,9 @@ export class AppleClient {
       note: '',
     });
     const result = readRecord(data, 'result');
-    const reservation = result && readRecord(result, 'hme');
-    const confirmed = reservation?.hme;
+    const hmeResult = result?.hme;
+    const reservation = isRecord(hmeResult) ? hmeResult : undefined;
+    const confirmed = typeof hmeResult === 'string' ? hmeResult : reservation?.hme;
     if (data.success !== true || confirmed !== candidate) {
       throw new ExtensionError('reservation_failure', 'Reservation was not confirmed.');
     }

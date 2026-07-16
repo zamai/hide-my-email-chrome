@@ -14,6 +14,8 @@ The inherited build was not retained unchanged because it exposed a content scri
 - The stored connection object contains only status, an allowlisted setup URL, an allowlisted service URL, and a timestamp.
 - Alias candidates and confirmed aliases are not persisted or logged.
 - The page context menu is offered only for HTTP and HTTPS documents.
+- `activeTab` grants temporary access only to the page where the user invokes the command, allowing the confirmed address to be inserted into its focused field.
+- `clipboardWrite` allows the confirmed address to be copied after the asynchronous Apple reservation finishes and the original user activation has elapsed.
 - There is no content script, remote code, telemetry, analytics, or non-Apple network request.
 - Clipboard access is isolated in an extension-owned offscreen document and occurs only after a matching reservation response.
 - If Chrome rejects the service-worker request origin, the same allowlisted request is executed in the main world of an already-open iCloud.com tab. Only the JSON response returns to the service worker; cookies remain inaccessible to extension code.

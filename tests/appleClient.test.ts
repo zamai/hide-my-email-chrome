@@ -52,6 +52,14 @@ describe('AppleClient', () => {
     );
   });
 
+  it('accepts a confirmed address returned directly by reservation', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(jsonResponse({ success: true, result: { hme: 'one@icloud.com' } }));
+    const client = new AppleClient(undefined, 'https://p123-maildomainws.icloud.com', fetcher);
+    await expect(client.reserve('one@icloud.com', 'example.com')).resolves.toBe('one@icloud.com');
+  });
+
   it('rejects a mismatched reservation confirmation', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
       jsonResponse({

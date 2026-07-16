@@ -22,6 +22,8 @@
     ]
   },
   "permissions": [
+    "activeTab",
+    "clipboardWrite",
     "declarativeNetRequest",
     "contextMenus",
     "notifications",
