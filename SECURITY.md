@@ -16,6 +16,7 @@ The inherited build was not retained unchanged because it exposed a content scri
 - The page context menu is offered only for HTTP and HTTPS documents.
 - There is no content script, remote code, telemetry, analytics, or non-Apple network request.
 - Clipboard access is isolated in an extension-owned offscreen document and occurs only after a matching reservation response.
+- If Chrome rejects the service-worker request origin, the same allowlisted request is executed in the main world of an already-open iCloud.com tab. Only the JSON response returns to the service worker; cookies remain inaccessible to extension code.
 
 The declarative request rules set Apple Origin and Referer headers for extension-initiated iCloud requests. This compatibility mechanism is intentionally restricted to Apple hostnames and is required because the private web API may reject a `chrome-extension://` origin.
 

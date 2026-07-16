@@ -1,12 +1,20 @@
 import { AppleClient } from './appleClient';
-import { ChromeAdapter, installContextMenu, isGenerateMenuClick } from './chromeAdapter';
+import {
+  chromeAppleFetch,
+  ChromeAdapter,
+  installContextMenu,
+  isGenerateMenuClick,
+} from './chromeAdapter';
 import { DEFAULT_SETUP_URL } from './domain';
+import { enableDevelopmentReload, reportDevelopmentError } from './devReload';
 import { HideMyEmailWorkflow } from './workflow';
+
+if (__DEV__) enableDevelopmentReload();
 
 const adapter = new ChromeAdapter();
 const workflow = new HideMyEmailWorkflow(
   adapter,
-  (setupUrl, serviceUrl) => new AppleClient(setupUrl, serviceUrl)
+  (setupUrl, serviceUrl) => new AppleClient(setupUrl, serviceUrl, chromeAppleFetch)
 );
 
 chrome.runtime.onInstalled.addListener(() => void installContextMenu());
@@ -37,11 +45,13 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
 
   void task.then(
     (state) => sendResponse({ ok: true, state }),
-    (error: unknown) =>
+    (error: unknown) => {
+      if (__DEV__) reportDevelopmentError(error);
       sendResponse({
         ok: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-      })
+      });
+    }
   );
   return true;
 });

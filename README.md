@@ -31,7 +31,7 @@ For an edit/test loop:
 npm run dev
 ```
 
-Then open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select this repository's `build` directory. After source changes, click the extension's reload button on `chrome://extensions`; the development process rebuilds files but Chrome still needs the extension reload.
+Then open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select this repository's `build` directory. If it was already loaded, click its reload button once after starting `npm run dev`. From that point onward, successful TypeScript or static-asset rebuilds make the development build reload itself automatically through a loopback-only WebSocket. Production builds do not contain or connect to this reload channel.
 
 For a production build, run `npm run build` and load the same `build` directory. Do not install a build produced by an untrusted machine; build from the reviewed source and committed lockfile.
 

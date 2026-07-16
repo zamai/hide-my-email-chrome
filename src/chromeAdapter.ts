@@ -58,6 +58,50 @@ export function isGenerateMenuClick(info: chrome.contextMenus.OnClickData): bool
   return info.menuItemId === MENU_ID;
 }
 
+export const chromeAppleFetch: typeof fetch = async (input, init) => {
+  try {
+    return await fetch(input, init);
+  } catch (extensionFetchError) {
+    const url = input instanceof Request ? input.url : input.toString();
+    const tabs = await chrome.tabs.query({
+      url: ['https://www.icloud.com/*', 'https://www.icloud.com.cn/*'],
+    });
+    const tab = tabs.find((candidate) => candidate.id !== undefined);
+    if (tab?.id === undefined) throw extensionFetchError;
+
+    const headers: Record<string, string> = {};
+    new Headers(init?.headers).forEach((value, key) => {
+      headers[key] = value;
+    });
+    const request = {
+      method: init?.method ?? 'GET',
+      credentials: 'include' as const,
+      headers,
+      ...(typeof init?.body === 'string' ? { body: init.body } : {}),
+    };
+
+    const [injection] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      world: 'MAIN',
+      func: async (requestUrl: string, requestInit: RequestInit) => {
+        const response = await fetch(requestUrl, requestInit);
+        return {
+          body: await response.text(),
+          status: response.status,
+          statusText: response.statusText,
+        };
+      },
+      args: [url, request],
+    });
+    if (!injection?.result) throw extensionFetchError;
+    return new Response(injection.result.body, {
+      status: injection.result.status,
+      statusText: injection.result.statusText,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+};
+
 function isMessageResponse(value: unknown): value is { ok: boolean } {
   return typeof value === 'object' && value !== null && 'ok' in value;
 }
