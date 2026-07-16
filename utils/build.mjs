@@ -1,5 +1,5 @@
 import { build, context } from 'esbuild';
-import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { watch as watchFiles } from 'node:fs';
 import path from 'node:path';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -10,6 +10,10 @@ const outdir = path.join(root, 'build');
 
 const staticFiles = new Set(['rules.json', 'popup.html', 'popup.css', 'offscreen.html']);
 
+async function overwriteFile(source, destination) {
+  await writeFile(destination, await readFile(source));
+}
+
 async function syncStaticAssets() {
   const pkg = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
   const manifest = JSON.parse(await readFile(path.join(root, 'src/manifest.json'), 'utf8'));
@@ -18,17 +22,16 @@ async function syncStaticAssets() {
     JSON.stringify({ version: pkg.version, ...manifest }, null, 2)
   );
   for (const file of staticFiles) {
-    await cp(path.join(root, 'src', file), path.join(outdir, file));
+    await overwriteFile(path.join(root, 'src', file), path.join(outdir, file));
   }
   for (const size of [16, 32, 48, 128]) {
-    await cp(
+    await overwriteFile(
       path.join(root, `src/assets/img/icon-${size}.png`),
       path.join(outdir, `icon-${size}.png`)
     );
   }
 }
 
-await rm(outdir, { recursive: true, force: true });
 await mkdir(outdir, { recursive: true });
 await syncStaticAssets();
 
