@@ -1,0 +1,68 @@
+:root {
+  color-scheme: light dark;
+  font:
+    14px / 1.45 system-ui,
+    sans-serif;
+}
+body {
+  margin: 0;
+  min-width: 340px;
+  background: Canvas;
+  color: CanvasText;
+}
+main {
+  padding: 20px;
+}
+header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+h1 {
+  margin: 0;
+  font-size: 19px;
+}
+header p {
+  margin: 2px 0 0;
+  font-weight: 650;
+}
+#status[data-state="ready"] {
+  color: #16803c;
+}
+#status[data-state="reconnect_required"] {
+  color: #b45309;
+}
+#detail {
+  min-height: 60px;
+  color: color-mix(in srgb, CanvasText 72%, transparent);
+}
+.region {
+  display: block;
+  margin: 12px 0;
+  font-size: 12px;
+}
+button {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #1473e6;
+  color: white;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+button.secondary {
+  background: transparent;
+  color: CanvasText;
+  border: 1px solid color-mix(in srgb, CanvasText 25%, transparent);
+}
+.privacy {
+  margin: 16px 0 0;
+  font-size: 11px;
+  color: color-mix(in srgb, CanvasText 58%, transparent);
+}

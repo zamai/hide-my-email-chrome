@@ -1,93 +1,57 @@
-# iCloud Hide My Email Browser Extension
+# Hide My Email for Chrome
 
-[![Tests Status](https://github.com/dedoussis/icloud-hide-my-email-browser-extension/workflows/tests/badge.svg)](https://github.com/dedoussis/icloud-hide-my-email-browser-extension/actions/workflows/tests.yml)
+A small, auditable Manifest V3 extension that reserves one Apple Hide My Email address from Chrome's page context menu.
 
-[Hide My Email](https://support.apple.com/en-us/HT210425) is a premium privacy service of iCloud. Safari offers a native integration with Hide My Email, whereby users are prompted to generate a Hide My Email address upon registration to any website. This extension aims to bring a similar UX into a wider variety of browsers. In particular, it has been explicitly tested to work on:
+The extension deliberately does **not** ask for or store an Apple ID, password, 2FA code, copied cookie, session token, or generated-address history. Authentication stays on Apple's website and requests reuse the iCloud session already managed by the current Chrome profile. Only the Apple setup endpoint, discovered Premium Mail Settings URL, connection status, and connection time are stored in `chrome.storage.local`.
 
-- [Chrome](https://chrome.google.com/webstore/detail/icloud-hide-my-email/omiaekblhgfopjkjnenhahfgcgnbohlk)
-- [Firefox](https://addons.mozilla.org/en-US/firefox/addon/icloud-hide-my-email/)
-- [Brave](https://chrome.google.com/webstore/detail/icloud-hide-my-email/omiaekblhgfopjkjnenhahfgcgnbohlk)
-- Microsoft Edge
+Apple's Hide My Email web API is undocumented and may change without notice. This is an independent project and is not endorsed by or affiliated with Apple.
 
-Note that the extension _should_ work on any browser that implements the [extension API](https://developer.chrome.com/docs/extensions/reference/) supported by Chromium-based browsers.
+## Use
 
-_Disclaimer: This extension is not endorsed by, directly affiliated with, maintained, authorized, or sponsored by Apple._
+1. Sign in at [iCloud.com](https://www.icloud.com/) in the Chrome profile where the extension is installed.
+2. Open the extension and select **Connect iCloud**.
+3. On any HTTP or HTTPS website, right-click and select **Generate new email**.
+4. After Apple confirms the reservation, Chrome copies the address and displays a notification.
 
-<p align="center">
-<img src="./src/assets/img/demo-popup.gif" alt="Extension popup demo" width="400" height="auto"/>
-</p>
-
-<p align="center">
-<img src="./src/assets/img/demo-content.gif" alt="Extension content demo" width="600" height="auto"/>
-</p>
-
-## Features
-
-- Simple pop-up UI for generating and reserving new Hide My Email addresses
-- Ability to manage existing Hide My Email addresses (including deactivation, reactivation, and deletion)
-- Autofilling on any HTML input element that is relevant to email
-- Quick configuration of Hide My Email settings, such as the Forward-To address, through the Options page of the extension
-
-## Options
-
-### Address autofilling
-
-The extension can be configured to
-
-1. show an autofill button on input field focus
-2. show a context menu item when right-clicking on input fields
-
-<p align="center">
-<img src="./src/assets/img/readme-button-autofilling.png" alt="Autofilling button on input field focus" width="400" height="auto"/>
-</p>
-
-<p align="center">
-<img src="./src/assets/img/readme-context-menu-autofilling.png" alt="Context menu item when right-clicking on input fields" width="400" height="auto"/>
-</p>
-
-You can enable/disable any of the autofilling mechanisms through the Options page of the extension.
+If the Apple session expires, sign in at iCloud.com again and select **Reconnect iCloud**. The command is unavailable on internal Chrome pages, extension pages, local files, and other URLs without a website hostname.
 
 ## Develop
 
-This extension is entirely written in TypeScript. The UI pages of the extension (e.g. Pop-Up and Options) are implemented as React apps and styled with TailwindCSS.
+Requirements: Node 25 (see `.nvmrc`) and current Google Chrome.
 
-### Dev environment
-
-Development was carried out in an environment that matches the following Docker image:
-
-```Dockerfile
-FROM node:25.1.0-alpine3.22
-
-RUN apk add --update --no-cache g++ make python3
-
-ADD . /opt/extension
-
-WORKDIR /opt/extension
-
-ENTRYPOINT ["sh"]
+```sh
+nvm use
+npm ci
+npm run verify
 ```
 
-### Development workflow
+For an edit/test loop:
 
-The table below outlines the sequence of steps that need to be followed in order to ship a change in the extension. The execution of some of these steps varies per browser engine.
+```sh
+npm run dev
+```
 
-Note: the following console commands are to be executed from the root directory of this repo
+Then open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select this repository's `build` directory. After source changes, click the extension's reload button on `chrome://extensions`; the development process rebuilds files but Chrome still needs the extension reload.
 
-<!-- prettier-ignore-start -->
-| # | Description | Chromium | Firefox |
-| - | - | - | - |
-| 0 | Configure node environment (not required when building with Docker) | `nvm use` | `nvm use` |
-| 1 | Install deps | `npm ci` | `npm ci && npm i -g web-ext` |
-| 2 | Spin up the DevServer. The server generates the `build` dir. | `npm run start` | `npm run start:firefox` |
-| 3 | Load the unpacked extension on the browser |  The `build` dir can be loaded as an unpacked extension through the browser's UI. See the relevant [Google Chrome guide](https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/#load-unpacked). | `web-ext -s build run` |
-| 4 | Develop against the local browser instance on which the `build` dir is loaded | N/A | N/A |
-| 5 | Build productionised artefact | `npm run build` | `npm run build:firefox` |
-| 6 | Compress productionised artefact | `zip build.zip ./build/*` | `web-ext -s build build` |
-| 7 | Publish | [Chrome webstore dev console](https://chrome.google.com/webstore/devconsole/) | [Mozilla Add-on developer hub](https://addons.mozilla.org/en-US/developers/addon/icloud-hide-my-email/versions/submit/) |
-<!-- prettier-ignore-end -->
+For a production build, run `npm run build` and load the same `build` directory. Do not install a build produced by an untrusted machine; build from the reviewed source and committed lockfile.
 
-### TODOs
+## Manual smoke test
 
-- [ ] Ability to modify the label and note of existing HME addresses
-- [ ] CI and maybe CD
-- [ ] Dependabot
+Use a test iCloud+ account if possible, because a successful smoke test creates a real alias.
+
+1. Run `npm run verify`, load `build`, and inspect the extension details. Expected permissions are context menus, notifications, offscreen clipboard, local storage, request-header rules, and Apple iCloud hosts only.
+2. Open iCloud.com and sign in using Apple's page. Confirm the extension never renders password or 2FA inputs.
+3. Select **Connect iCloud**. Close and reopen the popup; it should remain connected.
+4. Open `https://example.com/path?query=1`, invoke **Generate new email** once, and confirm one success notification and one clipboard value.
+5. In iCloud Hide My Email settings, confirm exactly one new alias with label `example.com` and an empty note. Remove or deactivate the test alias manually.
+6. Repeat two context-menu clicks quickly in one tab. Only one reservation should occur. Separate tabs may proceed independently.
+7. Sign out at iCloud.com, invoke the command, and confirm the extension reports that reconnection is required and copies nothing.
+8. Confirm the command does not appear on `chrome://extensions` or a local `file://` page.
+
+Mocked tests cannot prove current Apple endpoint compatibility, cookie behavior, or Origin handling, so this live check is required after Apple-facing changes.
+
+## Security boundary
+
+See [SECURITY.md](SECURITY.md) for the audit summary, permissions rationale, stored-data inventory, and maintenance checklist.
+
+This project began from Dimitrios Dedoussis's MIT-licensed [`icloud-hide-my-email-browser-extension`](https://github.com/dedoussis/icloud-hide-my-email-browser-extension). The fork was reduced to the narrower Chrome-only workflow described here.
