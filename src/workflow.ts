@@ -10,7 +10,7 @@ import {
 export type WorkflowPort = {
   getConnection(): Promise<ConnectionState>;
   saveConnection(state: ConnectionState): Promise<void>;
-  copy(text: string): Promise<void>;
+  deliver(text: string, tabId: number, preferInput: boolean): Promise<'input' | 'clipboard'>;
   notify(title: string, message: string): Promise<void>;
 };
 
@@ -42,7 +42,11 @@ export class HideMyEmailWorkflow {
     }
   }
 
-  async generateForTab(tabId: number, pageUrl: string): Promise<string> {
+  async generateForTab(
+    tabId: number,
+    pageUrl: string,
+    options: { preferInput?: boolean } = {}
+  ): Promise<string> {
     if (this.inProgressTabs.has(tabId)) {
       throw new ExtensionError('already_in_progress', 'Duplicate invocation suppressed.');
     }
@@ -61,12 +65,18 @@ export class HideMyEmailWorkflow {
 
       const candidate = await client.generate();
       const confirmed = await client.reserve(candidate, label);
+      let delivery: 'input' | 'clipboard';
       try {
-        await this.port.copy(confirmed);
+        delivery = await this.port.deliver(confirmed, tabId, options.preferInput === true);
       } catch (cause) {
-        throw new ExtensionError('clipboard_failure', 'Clipboard write failed.', { cause });
+        throw new ExtensionError('clipboard_failure', 'Address delivery failed.', { cause });
       }
-      await this.port.notify('Hide My Email created', `${confirmed} was copied to your clipboard.`);
+      await this.port.notify(
+        'Hide My Email created',
+        delivery === 'input'
+          ? `${confirmed} was inserted into the focused field.`
+          : `${confirmed} was copied to your clipboard.`
+      );
       return confirmed;
     } catch (error) {
       if (error instanceof ExtensionError && error.code === 'session_expired') {

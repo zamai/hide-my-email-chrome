@@ -14,7 +14,7 @@ function setup() {
     saveConnection: vi.fn(async (next) => {
       state = next;
     }),
-    copy: vi.fn(async () => undefined),
+    deliver: vi.fn(async () => 'clipboard' as const),
     notify: vi.fn(async () => undefined),
   };
   const connected: ConnectedAppleClient = {
@@ -30,25 +30,37 @@ function setup() {
 }
 
 describe('HideMyEmailWorkflow', () => {
-  it('reserves once with a normalized label, then copies and notifies', async () => {
+  it('reserves once with a normalized label, then delivers and notifies', async () => {
     const { port, client } = setup();
     const workflow = new HideMyEmailWorkflow(port, () => client);
     await workflow.generateForTab(7, 'https://www.Example.com:8443/path?q=1');
     expect(client.reserve).toHaveBeenCalledOnce();
     expect(client.reserve).toHaveBeenCalledWith('candidate@icloud.com', 'example.com');
-    expect(port.copy).toHaveBeenCalledWith('candidate@icloud.com');
+    expect(port.deliver).toHaveBeenCalledWith('candidate@icloud.com', 7, false);
     expect(port.notify).toHaveBeenLastCalledWith(
       'Hide My Email created',
       expect.stringContaining('candidate@icloud.com')
     );
   });
 
-  it('never copies an unconfirmed candidate', async () => {
+  it('delivers to a focused input when requested', async () => {
+    const { port, client } = setup();
+    vi.mocked(port.deliver).mockResolvedValueOnce('input');
+    const workflow = new HideMyEmailWorkflow(port, () => client);
+    await workflow.generateForTab(7, 'https://example.com', { preferInput: true });
+    expect(port.deliver).toHaveBeenCalledWith('candidate@icloud.com', 7, true);
+    expect(port.notify).toHaveBeenLastCalledWith(
+      'Hide My Email created',
+      expect.stringContaining('inserted into the focused field')
+    );
+  });
+
+  it('never delivers an unconfirmed candidate', async () => {
     const { port, client } = setup();
     client.reserve.mockRejectedValueOnce(new Error('not reserved'));
     const workflow = new HideMyEmailWorkflow(port, () => client);
     await expect(workflow.generateForTab(7, 'https://example.com')).rejects.toThrow();
-    expect(port.copy).not.toHaveBeenCalled();
+    expect(port.deliver).not.toHaveBeenCalled();
   });
 
   it('suppresses simultaneous commands in the same tab', async () => {

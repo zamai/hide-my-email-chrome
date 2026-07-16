@@ -14,7 +14,13 @@ export class ChromeAdapter implements WorkflowPort {
     await chrome.storage.local.set({ [CONNECTION_KEY]: state });
   }
 
-  async copy(text: string): Promise<void> {
+  async deliver(text: string, tabId: number, preferInput: boolean): Promise<'input' | 'clipboard'> {
+    if (preferInput && (await insertIntoFocusedField(tabId, text))) return 'input';
+    await this.copy(text);
+    return 'clipboard';
+  }
+
+  private async copy(text: string): Promise<void> {
     const offscreenUrl = chrome.runtime.getURL('offscreen.html');
     const contexts = await chrome.runtime.getContexts({
       contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
@@ -41,6 +47,35 @@ export class ChromeAdapter implements WorkflowPort {
       message,
       iconUrl: 'icon-128.png',
     });
+  }
+}
+
+async function insertIntoFocusedField(tabId: number, text: string): Promise<boolean> {
+  try {
+    const [injection] = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: (value: string) => {
+        const element = document.activeElement;
+        const isTextArea = element instanceof HTMLTextAreaElement;
+        const isSupportedInput =
+          element instanceof HTMLInputElement &&
+          ['', 'email', 'search', 'tel', 'text', 'url'].includes(element.type);
+        if ((!isTextArea && !isSupportedInput) || element.disabled || element.readOnly)
+          return false;
+
+        const prototype = isTextArea ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+        const setter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+        if (setter) setter.call(element, value);
+        else element.value = value;
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+      },
+      args: [text],
+    });
+    return injection?.result === true;
+  } catch {
+    return false;
   }
 }
 

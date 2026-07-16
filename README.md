@@ -11,7 +11,7 @@ Apple's Hide My Email web API is undocumented and may change without notice. Thi
 1. Sign in at [iCloud.com](https://www.icloud.com/) in the Chrome profile where the extension is installed.
 2. Open the extension and select **Connect iCloud**.
 3. On any HTTP or HTTPS website, right-click and select **Generate new email**.
-4. After Apple confirms the reservation, Chrome copies the address and displays a notification.
+4. After Apple confirms the reservation, the extension fills the focused email/text field. If no supported field is focused, it copies the address to the clipboard instead. Chrome then displays a notification.
 
 If the Apple session expires, sign in at iCloud.com again and select **Reconnect iCloud**. The command is unavailable on internal Chrome pages, extension pages, local files, and other URLs without a website hostname.
 
