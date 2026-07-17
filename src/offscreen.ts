@@ -11,9 +11,22 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
     return false;
   }
 
-  void navigator.clipboard.writeText(message.text).then(
-    () => sendResponse({ ok: true }),
-    () => sendResponse({ ok: false })
-  );
-  return true;
+  const input = document.createElement('textarea');
+  try {
+    input.value = message.text;
+    input.setAttribute('readonly', '');
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.append(input);
+    input.select();
+    input.setSelectionRange(0, input.value.length);
+    const copied = document.execCommand('copy');
+    input.remove();
+    sendResponse({ ok: copied });
+  } catch {
+    sendResponse({ ok: false });
+  } finally {
+    input.remove();
+  }
+  return false;
 });
