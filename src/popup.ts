@@ -10,8 +10,11 @@ function requiredElement<T extends Element>(selector: string): T {
 
 const status = requiredElement<HTMLElement>('#status');
 const detail = requiredElement<HTMLElement>('#detail');
+const version = requiredElement<HTMLElement>('#version');
 const connectButton = requiredElement<HTMLButtonElement>('#connect');
 const disconnectButton = requiredElement<HTMLButtonElement>('#disconnect');
+
+version.textContent = `v${chrome.runtime.getManifest().version}`;
 
 function render(state: ConnectionState): void {
   const ready = state.status === 'ready';
