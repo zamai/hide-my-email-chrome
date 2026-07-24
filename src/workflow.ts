@@ -74,7 +74,7 @@ export class HideMyEmailWorkflow {
       await this.port.notify(
         'Hide My Email created',
         delivery === 'input'
-          ? `${reservedAddress} was inserted into the focused field.`
+          ? `${reservedAddress} was inserted into the focused field and copied to your clipboard.`
           : `${reservedAddress} was copied to your clipboard.`
       );
       return reservedAddress;

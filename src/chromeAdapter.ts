@@ -15,9 +15,9 @@ export class ChromeAdapter implements WorkflowPort {
   }
 
   async deliver(text: string, tabId: number, preferInput: boolean): Promise<'input' | 'clipboard'> {
-    if (preferInput && (await insertIntoFocusedField(tabId, text))) return 'input';
+    const inserted = preferInput && (await insertIntoFocusedField(tabId, text));
     await this.copy(text);
-    return 'clipboard';
+    return inserted ? 'input' : 'clipboard';
   }
 
   private async copy(text: string): Promise<void> {
@@ -29,8 +29,9 @@ export class ChromeAdapter implements WorkflowPort {
     if (contexts.length === 0) {
       await chrome.offscreen.createDocument({
         url: 'offscreen.html',
-        reasons: [chrome.offscreen.Reason.CLIPBOARD],
-        justification: 'Copy the confirmed Hide My Email address after a user command.',
+        reasons: [chrome.offscreen.Reason.CLIPBOARD, chrome.offscreen.Reason.AUDIO_PLAYBACK],
+        justification:
+          'Copy the confirmed Hide My Email address and play a brief completion sound.',
       });
     }
     const response: unknown = await chrome.runtime.sendMessage({

@@ -51,7 +51,7 @@ describe('HideMyEmailWorkflow', () => {
     expect(port.deliver).toHaveBeenCalledWith('candidate@icloud.com', 7, true);
     expect(port.notify).toHaveBeenLastCalledWith(
       'Hide My Email created',
-      expect.stringContaining('inserted into the focused field')
+      'candidate@icloud.com was inserted into the focused field and copied to your clipboard.'
     );
   });
 

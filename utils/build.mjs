@@ -9,6 +9,9 @@ const root = path.resolve(import.meta.dirname, '..');
 const outdir = path.join(root, 'build');
 
 const staticFiles = new Set(['rules.json', 'popup.html', 'popup.css', 'offscreen.html']);
+const staticAssets = new Map([
+  ['assets/audio/clipboard-confirmation.wav', 'clipboard-confirmation.wav'],
+]);
 
 async function overwriteFile(source, destination) {
   await writeFile(destination, await readFile(source));
@@ -23,6 +26,9 @@ async function syncStaticAssets() {
   );
   for (const file of staticFiles) {
     await overwriteFile(path.join(root, 'src', file), path.join(outdir, file));
+  }
+  for (const [source, destination] of staticAssets) {
+    await overwriteFile(path.join(root, 'src', source), path.join(outdir, destination));
   }
   for (const size of [16, 32, 48, 128]) {
     await overwriteFile(
@@ -101,6 +107,7 @@ if (watch) {
     const normalized = filename.toString().replaceAll('\\', '/');
     const isStatic =
       staticFiles.has(normalized) ||
+      staticAssets.has(normalized) ||
       normalized === 'manifest.json' ||
       normalized.startsWith('assets/img/icon-');
     if (!isStatic) return;

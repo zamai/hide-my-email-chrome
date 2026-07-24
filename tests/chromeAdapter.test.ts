@@ -1,5 +1,81 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { chromeAppleFetch } from '../src/chromeAdapter';
+import { chromeAppleFetch, ChromeAdapter } from '../src/chromeAdapter';
+
+describe('ChromeAdapter', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('copies after inserting into a focused field', async () => {
+    const executeScript = vi.fn().mockResolvedValue([{ result: true }]);
+    const sendMessage = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('chrome', {
+      runtime: {
+        ContextType: { OFFSCREEN_DOCUMENT: 'OFFSCREEN_DOCUMENT' },
+        getURL: vi.fn(() => 'chrome-extension://extension/offscreen.html'),
+        getContexts: vi.fn().mockResolvedValue([{}]),
+        sendMessage,
+      },
+      scripting: { executeScript },
+    });
+
+    await expect(new ChromeAdapter().deliver('alias@icloud.com', 42, true)).resolves.toBe('input');
+    expect(executeScript).toHaveBeenCalledOnce();
+    expect(sendMessage).toHaveBeenCalledWith({
+      type: 'copy',
+      text: 'alias@icloud.com',
+    });
+  });
+
+  it('copies without attempting insertion when no editable field was selected', async () => {
+    const executeScript = vi.fn();
+    const sendMessage = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('chrome', {
+      runtime: {
+        ContextType: { OFFSCREEN_DOCUMENT: 'OFFSCREEN_DOCUMENT' },
+        getURL: vi.fn(() => 'chrome-extension://extension/offscreen.html'),
+        getContexts: vi.fn().mockResolvedValue([{}]),
+        sendMessage,
+      },
+      scripting: { executeScript },
+    });
+
+    await expect(new ChromeAdapter().deliver('alias@icloud.com', 42, false)).resolves.toBe(
+      'clipboard'
+    );
+    expect(executeScript).not.toHaveBeenCalled();
+    expect(sendMessage).toHaveBeenCalledWith({
+      type: 'copy',
+      text: 'alias@icloud.com',
+    });
+  });
+
+  it('creates an offscreen document authorized for clipboard and audio', async () => {
+    const createDocument = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('chrome', {
+      runtime: {
+        ContextType: { OFFSCREEN_DOCUMENT: 'OFFSCREEN_DOCUMENT' },
+        getURL: vi.fn(() => 'chrome-extension://extension/offscreen.html'),
+        getContexts: vi.fn().mockResolvedValue([]),
+        sendMessage: vi.fn().mockResolvedValue({ ok: true }),
+      },
+      offscreen: {
+        Reason: {
+          CLIPBOARD: 'CLIPBOARD',
+          AUDIO_PLAYBACK: 'AUDIO_PLAYBACK',
+        },
+        createDocument,
+      },
+      scripting: { executeScript: vi.fn() },
+    });
+
+    await new ChromeAdapter().deliver('alias@icloud.com', 42, false);
+
+    expect(createDocument).toHaveBeenCalledWith({
+      url: 'offscreen.html',
+      reasons: ['CLIPBOARD', 'AUDIO_PLAYBACK'],
+      justification: 'Copy the confirmed Hide My Email address and play a brief completion sound.',
+    });
+  });
+});
 
 describe('chromeAppleFetch', () => {
   afterEach(() => vi.unstubAllGlobals());
